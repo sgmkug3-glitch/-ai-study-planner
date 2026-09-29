@@ -10,6 +10,30 @@
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+  <!-- 보안 4자리 PIN 잠금 오버레이 -->
+  <div id="pinLockOverlay" class="pin-lock-overlay {% if is_authenticated %}hidden{% endif %}">
+    <div class="pin-card" id="pinCard">
+      <div class="pin-icon">🔒</div>
+      <h2>AI 학습 플래너 보안 잠금</h2>
+      <p class="pin-sub">학습 플래너를 이용하시려면 4자리 보안 비밀번호를 입력해 주세요.</p>
+      
+      <div class="pin-input-container" id="pinInputs">
+        <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" autocomplete="off" autofocus>
+        <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" autocomplete="off">
+        <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" autocomplete="off">
+        <input type="password" maxlength="1" class="pin-digit" inputmode="numeric" autocomplete="off">
+      </div>
+      
+      <div id="pinErrorMsg" class="pin-error-msg hidden"></div>
+
+      <button type="button" id="pinUnlockBtn" class="btn btn-primary btn-large">
+        🔓 잠금 해제
+      </button>
+
+      <p class="pin-hint">💡 기본 비밀번호는 <strong>1234</strong>이며, <code>.env</code> 파일의 <code>PLANNER_PIN</code>에서 언제든 변경할 수 있습니다.</p>
+    </div>
+  </div>
+
   <!-- 네비게이션 헤더 -->
   <header class="app-header">
     <div class="header-inner container">
@@ -19,6 +43,7 @@
         <span class="badge-model">Gemini 3.5 Flash Lite</span>
       </div>
       <div class="header-actions">
+        <button id="lockAppBtn" class="btn btn-ghost" title="화면 잠그기">🔒 잠그기</button>
         <button id="themeToggleBtn" class="btn btn-ghost" title="테마 변경">🌿 편안한 모드</button>
       </div>
     </div>

@@ -32,6 +32,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportMdBtn = document.getElementById("exportMdBtn");
   const resetPlanBtn = document.getElementById("resetPlanBtn");
   const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const lockAppBtn = document.getElementById("lockAppBtn");
+
+  // 보안 PIN 잠금 요소
+  const pinLockOverlay = document.getElementById("pinLockOverlay");
+  const pinCard = document.getElementById("pinCard");
+  const pinDigits = document.querySelectorAll(".pin-digit");
+  const pinErrorMsg = document.getElementById("pinErrorMsg");
+  const pinUnlockBtn = document.getElementById("pinUnlockBtn");
 
   // 학습 회고 요소
   const emojiButtons = document.querySelectorAll(".btn-emoji");
@@ -60,6 +68,121 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.toggle("dark-mode");
       const isDark = document.body.classList.contains("dark-mode");
       themeToggleBtn.textContent = isDark ? "☀️ 편안한 라이트 모드" : "🌿 편안한 세이지 모드";
+    });
+  }
+
+  // ==========================================
+  // 🔒 보안 4자리 PIN 잠금 및 해제 인터랙션
+  // ==========================================
+  if (pinDigits.length > 0) {
+    // 각 자리 숫자 입력 시 다음 칸 자동 이동 및 4자리 완성 시 자동 해제
+    pinDigits.forEach((input, index) => {
+      input.addEventListener("input", (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, "");
+        e.target.value = val;
+
+        if (val) {
+          if (index < pinDigits.length - 1) {
+            pinDigits[index + 1].focus();
+          } else {
+            // 4자리 모두 입력 완료 시 즉시 잠금 해제 시도
+            verifyAndUnlock();
+          }
+        }
+      });
+
+      // 백스페이스 누르면 이전 칸으로 이동
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && !e.target.value && index > 0) {
+          pinDigits[index - 1].focus();
+        } else if (e.key === "Enter") {
+          verifyAndUnlock();
+        }
+      });
+
+      // 4자리 복사-붙여넣기 지원
+      input.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/[^0-9]/g, "");
+        if (pasted.length >= 4) {
+          for (let i = 0; i < 4; i++) {
+            pinDigits[i].value = pasted[i];
+          }
+          pinDigits[3].focus();
+          verifyAndUnlock();
+        }
+      });
+    });
+
+    // 잠금 해제 버튼 클릭
+    if (pinUnlockBtn) {
+      pinUnlockBtn.addEventListener("click", verifyAndUnlock);
+    }
+  }
+
+  // PIN 검증 비동기 함수
+  async function verifyAndUnlock() {
+    let pin = "";
+    pinDigits.forEach((d) => (pin += d.value));
+
+    if (pin.length < 4) {
+      showPinError("비밀번호 4자리를 모두 입력해 주세요.");
+      return;
+    }
+
+    try {
+      const resp = await fetch("/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: pin })
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok && data.success) {
+        // 성공 시 에러 메시지 초기화 및 오버레이 숨기기
+        pinErrorMsg.classList.add("hidden");
+        pinErrorMsg.textContent = "";
+        pinLockOverlay.classList.add("hidden");
+        // 입력창 비우기
+        pinDigits.forEach((d) => (d.value = ""));
+      } else {
+        // 실패 시 카드 흔들림 애니메이션 및 에러 표시
+        showPinError(data.error || "비밀번호가 올바르지 않습니다.");
+      }
+    } catch (err) {
+      showPinError("서버와의 통신에 실패했습니다.");
+    }
+  }
+
+  function showPinError(msg) {
+    pinErrorMsg.textContent = `❌ ${msg}`;
+    pinErrorMsg.classList.remove("hidden");
+
+    // 흔들림 애니메이션 적용
+    if (pinCard) {
+      pinCard.classList.remove("shake");
+      void pinCard.offsetWidth; // 리플로우 트리거
+      pinCard.classList.add("shake");
+    }
+
+    // 입력창 초기화 및 첫 번째 칸 포커스
+    pinDigits.forEach((d) => (d.value = ""));
+    if (pinDigits[0]) pinDigits[0].focus();
+  }
+
+  // 상단 헤더 "🔒 잠그기" 버튼 클릭 시 로그아웃 및 잠금 화면 복귀
+  if (lockAppBtn) {
+    lockAppBtn.addEventListener("click", async () => {
+      try {
+        await fetch("/logout", { method: "POST" });
+      } catch (e) {
+        console.warn("Logout error:", e);
+      }
+      pinDigits.forEach((d) => (d.value = ""));
+      pinErrorMsg.classList.add("hidden");
+      pinLockOverlay.classList.remove("hidden");
+      if (pinDigits[0]) pinDigits[0].focus();
     });
   }
 

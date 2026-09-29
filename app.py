@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime, date
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from dotenv import load_dotenv
 import requests
 
@@ -9,6 +9,10 @@ import requests
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "ai-study-planner-secret-pin-2026")
+
+# 보안 PIN 번호 설정 (기본값: 1234)
+PLANNER_PIN = os.getenv("PLANNER_PIN", "1234").strip()
 
 # API 키 가져오기
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
@@ -241,12 +245,36 @@ def call_gemini_planner(user_data, web_context=""):
 @app.route("/")
 def index():
     """메인 화면을 렌더링합니다."""
-    return render_template("index.html")
+    is_authenticated = session.get("authenticated", False)
+    return render_template("index.html", is_authenticated=is_authenticated)
+
+
+@app.route("/verify-pin", methods=["POST"])
+def verify_pin():
+    """4자리 PIN 번호를 검증하고 세션을 생성합니다."""
+    data = request.get_json() or {}
+    entered_pin = str(data.get("pin", "")).strip()
+
+    if entered_pin == PLANNER_PIN:
+        session["authenticated"] = True
+        return jsonify({"success": True, "message": "인증에 성공했습니다."})
+    else:
+        return jsonify({"success": False, "error": "비밀번호 4자리가 일치하지 않습니다."}), 401
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    """세션을 종료하여 화면을 다시 잠급니다."""
+    session.pop("authenticated", None)
+    return jsonify({"success": True, "message": "성공적으로 잠겼습니다."})
 
 
 @app.route("/generate", methods=["POST"])
 def generate():
-    """사용자 입력을 받아 Gemini 2.5 Flash Lite와 Serper를 통해 학습 플랜을 생성합니다."""
+    """사용자 입력을 받아 Gemini 3.5 Flash Lite와 Serper를 통해 학습 플랜을 생성합니다."""
+    # 보안 잠금 검사
+    if not session.get("authenticated", False):
+        return jsonify({"success": False, "error": "보안 잠금 상태입니다. 4자리 비밀번호를 먼저 입력해 주세요."}), 401
     try:
         data = request.get_json()
         if not data:

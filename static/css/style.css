@@ -925,3 +925,127 @@ body.dark-mode .alert-info {
     text-align: left;
   }
 }
+
+/* ==========================================================================
+   보안 4자리 PIN 잠금 화면 스타일 (PIN Lock Screen)
+   ========================================================================== */
+.pin-lock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(246, 248, 246, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+body.dark-mode .pin-lock-overlay {
+  background-color: rgba(18, 24, 20, 0.92);
+}
+
+.pin-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 44px 36px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(0);
+  transition: transform 0.2s ease;
+}
+
+.pin-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: inline-block;
+  animation: floatLock 3s infinite ease-in-out;
+}
+
+@keyframes floatLock {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.pin-card h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.pin-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.pin-input-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pin-digit {
+  width: 56px;
+  height: 64px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  background-color: var(--bg-subtle);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.pin-digit:focus {
+  border-color: var(--primary);
+  background-color: var(--bg-card);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+  transform: translateY(-2px);
+}
+
+.pin-error-msg {
+  color: #e63946;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  min-height: 20px;
+}
+
+.pin-hint {
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+  margin-top: 20px;
+  line-height: 1.4;
+}
+
+.pin-hint strong {
+  color: var(--primary);
+}
+
+/* 오류 시 흔들림 애니메이션 (Shake) */
+.shake {
+  animation: shakeAnim 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shakeAnim {
+  10%, 90% { transform: translate3d(-3px, 0, 0); }
+  20%, 80% { transform: translate3d(5px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
